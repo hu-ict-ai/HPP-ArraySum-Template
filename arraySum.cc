@@ -1,4 +1,4 @@
-/* arraySum.cpp uses an array to sum the values in an input file,
+/* arraySum.cc uses an array to sum the values in an input file,
  *  whose name is specified on the command-line.
  */
 #include <iostream>
