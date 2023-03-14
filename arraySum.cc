@@ -3,86 +3,81 @@
  */
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <memory>
 #include <omp.h> // OpenMP
 
 using std::cout, std::endl;
 
-void readArray(char *fileName, double **a, int *n);
-double sumArray(double *a, int numValues);
+// Type aliases for array smart pointers. Use input_array after reading data.
+typedef std::shared_ptr<const std::vector<double>> input_array;
+typedef std::shared_ptr<std::vector<double>> temporary_array;
 
-int main(int argc, char *argv[])
-{
-    int howMany;
+input_array readArray(const std::string& fileName);
+double sumArray(input_array);
+
+int main(int argc, char *argv[]) {
     double sum;
-    double *a;
 
-    if (argc != 2)
-    {
+    if (argc != 2) {
         cout << endl << "*** Usage: arraySum <inputFile>" << endl << endl;
         exit(1);
     }
 
-    readArray(argv[1], &a, &howMany);
-    sum = sumArray(a, howMany);
-    cout << "The sum of the values in the input file '" << argv[1] << "' is " << sum << endl;
+    input_array a = readArray(std::string(argv[1]));
 
-    free(a);
+    sum = sumArray(a);
+    cout << "The sum of the values in the input file '" << argv[1]
+      << "' is " << sum << endl;
 
     return 0;
 }
 
-/* readArray fills an array with values from a file.
- * Receive: fileName, a char*,
- *          a, the address of a pointer to an array,
- *          n, the address of an int.
- * PRE: fileName contains N, followed by N double values.
- * POST: a points to a dynamically allocated array
- *        containing the N values from fileName
- *        and n == N.
+/* readArray returns an array with values from a file.
+ * Receive: fileName, a constant string reference.
+ * Return: a finalised dynamically allocated array containing
+ *          the values from fileName.
  */
 
-void readArray(char *fileName, double **a, int *n)
+input_array readArray(const std::string& fileName)
 {
-    int count, howMany;
-    double *tempA;
+    size_t howMany;
+    unsigned int count;
+
     std::ifstream fin(fileName);
-    if (!fin.is_open())
-    {
-        cout << endl << "*** Unable to open input file ''" << fileName << "'" << endl << endl;
+
+    if (!fin.is_open()) {
+        cout << endl << "*** Unable to open input file ''" << fileName
+          << "'" << endl << endl;
+
         exit(1);
     }
 
     fin >> howMany;
-    tempA = (double *)calloc(howMany, sizeof(double));
-    if (tempA == NULL)
-    {
-        cout << endl << "*** Unable to allocate " << howMany << "-length array" << endl << endl;
-        exit(1);
-    }
+
+    // Without const, as array needs to be filled here
+    temporary_array tempA = std::make_shared<std::vector<double>>(howMany);
 
     for (count = 0; count < howMany; count++)
-        fin >> tempA[count];
+        fin >> tempA->at(count);
 
     fin.close();
 
-    *n = howMany;
-    *a = tempA;
+    return tempA; // Return as input_array, i.e. const
 }
 
-/* sumArray sums the values in an array of doubles.
- * Receive: a, a pointer to the head of an array;
- *          numValues, the number of values in the array.
+/* sumArray sums the values in a vector of doubles.
+ * Receive: a, a pointer to the vector.
  * Return: the sum of the values in the array.
  */
 
-double sumArray(double *a, int numValues)
-{
-    int i;
+double sumArray(input_array a) {
+    unsigned int i;
+    unsigned int numValues = a->size();
     double result = 0.0;
 
-    for (i = 0; i < numValues; i++)
-    {
-        result += a[i];
+    for (i = 0; i < numValues; i++) {
+        result += a->at(i);
     }
 
     return result;
