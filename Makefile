@@ -6,7 +6,9 @@ else
 	OPT_FLAGS=
 endif
 
-all:
+all: arraySum
+
+arraySum:
 		g++ -O2 -fopenmp $(OPT_FLAGS) -o arraySum arraySum.cc
 
 run: arraySum 10k.txt 100k.txt 10m.txt 100m.txt
